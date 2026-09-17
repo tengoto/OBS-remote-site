@@ -1,10 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <title>OBS Remote Hotkeys</title>
+
 <style>
     body {
         font-family: sans-serif;
@@ -57,29 +56,62 @@ let ws = null;
 let identified = false;
 let requestId = 0;
 
-const keys = {
-    "1": "OBS_KEY_1",
-    "2": "OBS_KEY_2",
-    "3": "OBS_KEY_3",
-    "4": "OBS_KEY_4",
-    "5": "OBS_KEY_5",
-    "6": "OBS_KEY_6",
-    "7": "OBS_KEY_7",
-    "8": "OBS_KEY_8",
-    "9": "OBS_KEY_9",
-    "0": "OBS_KEY_0",
-    "-": "OBS_KEY_MINUS",
-    "=": "OBS_KEY_EQUAL"
-};
+const keys = [
+    ["1", "OBS_KEY_1"],
+    ["2", "OBS_KEY_2"],
+    ["3", "OBS_KEY_3"],
+    ["4", "OBS_KEY_4"],
+    ["5", "OBS_KEY_5"],
+    ["6", "OBS_KEY_6"],
+    ["7", "OBS_KEY_7"],
+    ["8", "OBS_KEY_8"],
+    ["9", "OBS_KEY_9"],
+    ["0", "OBS_KEY_0"],
+    ["-", "OBS_KEY_MINUS"],
+    ["=", "OBS_KEY_EQUAL"]
+];
 
 const buttons = document.getElementById("buttons");
 
-for (const [label, keyId] of Object.entries(keys)) {
+for (const [label, keyId] of keys) {
     const button = document.createElement("button");
     button.textContent = label;
     button.onclick = () => triggerHotkey(keyId);
     buttons.appendChild(button);
 }
+
+document.addEventListener("keydown", (event) => {
+    const tag = document.activeElement?.tagName;
+
+    if (tag === "INPUT" || tag === "TEXTAREA") {
+        return;
+    }
+
+    const keyMap = {
+        "1": "OBS_KEY_1",
+        "2": "OBS_KEY_2",
+        "3": "OBS_KEY_3",
+        "4": "OBS_KEY_4",
+        "5": "OBS_KEY_5",
+        "6": "OBS_KEY_6",
+        "7": "OBS_KEY_7",
+        "8": "OBS_KEY_8",
+        "9": "OBS_KEY_9",
+        "0": "OBS_KEY_0",
+        "-": "OBS_KEY_MINUS",
+        "=": "OBS_KEY_EQUAL"
+    };
+
+    const keyId = keyMap[event.key];
+
+    if (!keyId) {
+        return;
+    }
+
+    event.preventDefault();
+
+    triggerHotkey(keyId);
+});
 
 function connect() {
     const url = document.getElementById("url").value;
@@ -88,13 +120,13 @@ function connect() {
     ws = new WebSocket(url);
 
     ws.onopen = () => {
-        document.getElementById("status").textContent = "WebSocket接続中";
+        document.getElementById("status").textContent =
+            "WebSocket接続中";
     };
 
     ws.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
 
-        // OBS WebSocket Hello
         if (msg.op === 0) {
             const hello = msg.d;
 
@@ -110,7 +142,8 @@ function connect() {
                     )
                 );
 
-                const secretBase64 = arrayBufferToBase64(secret);
+                const secretBase64 =
+                    arrayBufferToBase64(secret);
 
                 const authHash = await crypto.subtle.digest(
                     "SHA-256",
@@ -120,7 +153,8 @@ function connect() {
                     )
                 );
 
-                auth = arrayBufferToBase64(authHash);
+                auth =
+                    arrayBufferToBase64(authHash);
             }
 
             ws.send(JSON.stringify({
@@ -132,9 +166,9 @@ function connect() {
             }));
         }
 
-        // OBS WebSocket Identified
         if (msg.op === 2) {
             identified = true;
+
             document.getElementById("status").textContent =
                 "OBS接続完了";
         }
@@ -147,6 +181,7 @@ function connect() {
 
     ws.onclose = () => {
         identified = false;
+
         document.getElementById("status").textContent =
             "切断";
     };
